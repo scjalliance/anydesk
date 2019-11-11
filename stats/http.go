@@ -1,10 +1,8 @@
-package http
+package stats
 
 import (
 	"net/http"
 	"os"
-
-	"github.com/scjalliance/anydesk/stats"
 )
 
 // HandleHTTP handles HTTP for running in Google Cloud Functions
@@ -26,7 +24,7 @@ func HandleHTTP(w http.ResponseWriter, r *http.Request) {
 		ezKey, _ = os.LookupEnv("STATHAT_EZKEY")
 	}
 
-	err := stats.Run(licenseID, apiKey, ezKey, w)
+	err := Run(licenseID, apiKey, ezKey, w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
