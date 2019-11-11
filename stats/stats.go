@@ -14,7 +14,7 @@ import (
 var (
 	licenseID = kingpin.Flag("license", "AnyDesk License ID").Required().String()
 	apiKey    = kingpin.Flag("apikey", "AnyDesk API Key").Required().String()
-	ezKey     = kingpin.Flag("ezkey", "StatHat EZKey").Required().String()
+	ezKey     = kingpin.Flag("ezkey", "StatHat EZKey").String()
 )
 
 func intToStr(i int) string {
@@ -27,7 +27,12 @@ func intToStr(i int) string {
 func main() {
 	kingpin.Parse()
 
-	stat := stathat.New().EZKey(*ezKey)
+	stat := stathat.New()
+	if ezKey != nil {
+		stat = stat.EZKey(*ezKey)
+	} else {
+		stat = stat.Noop()
+	}
 
 	ad, err := anydesk.New(*apiKey, *licenseID, nil)
 	if err != nil {
