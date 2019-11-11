@@ -4,15 +4,21 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
+	"time"
 
 	"github.com/emmaly/anydesk"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
-	licenseID  = kingpin.Flag("license", "AnyDesk License ID").Required().String()
-	apiKey     = kingpin.Flag("apikey", "AnyDesk API Key").Required().String()
-	aliasMatch = regexp.MustCompile(`(?i)^scj(\d+)(-\d+)?@ad$`)
+	licenseID             = kingpin.Flag("license", "AnyDesk License ID").Required().String()
+	apiKey                = kingpin.Flag("apikey", "AnyDesk API Key").Required().String()
+	aliasMatch            = regexp.MustCompile(`(?i)^scj(\d+)(-\d+)?@ad$`)
+	newNamespace          = "@scj"
+	longestOldAliasLength = 0
+	longestNewAliasLength = 0
+	now                   = time.Now()
 )
 
 func main() {
@@ -43,20 +49,27 @@ func main() {
 	for _, client := range clients.Clients {
 		match := aliasMatch.FindStringSubmatch(client.Alias)
 		if len(match) > 1 {
+			if oldAliasLength := len(client.Alias); longestOldAliasLength < oldAliasLength {
+				longestOldAliasLength = oldAliasLength
+			}
 			assetID := match[1]
-			if existingClient, ok := clientMap[assetID]; !ok || existingClient.OnlineTime < client.OnlineTime {
+			if client.Online {
+				if newAliasLength := len(assetID + newNamespace); longestNewAliasLength < newAliasLength {
+					longestNewAliasLength = newAliasLength
+				}
 				clientMap[assetID] = client
 			}
 		}
 	}
 
 	for assetID, client := range clientMap {
-		alias := assetID + "@scj"
-		err := ad.ClientAlias(client.ID, alias)
-		if err != nil {
-			fmt.Printf("Error setting Client ID %d to %s: %s\n", client.ID, alias, err.Error())
-			continue
-		}
-		fmt.Printf("%d = %s\n", client.ID, alias)
+		newAlias := assetID + newNamespace
+		// time.Sleep(time.Millisecond * 250) // be a little polite about it...
+		// err := ad.ClientAlias(client.ID, newAlias)
+		// if err != nil {
+		// 	fmt.Printf("Error setting Client ID %d to %s: %s\n", client.ID, newAlias, err.Error())
+		// 	continue
+		// }
+		fmt.Printf("%d = %"+strconv.Itoa(longestOldAliasLength)+"s -> %"+strconv.Itoa(longestNewAliasLength)+"s\n", client.ID, client.Alias, newAlias)
 	}
 }
