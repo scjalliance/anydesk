@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/emmaly/anydesk"
@@ -15,6 +16,13 @@ var (
 	apiKey     = kingpin.Flag("apikey", "AnyDesk API Key").Required().String()
 	aliasMatch = regexp.MustCompile(`(?i)^scj(\d+)(-\d+)?@ad$`)
 )
+
+func intToStr(i int) string {
+	if i == -1 {
+		return "∞"
+	}
+	return strconv.Itoa(i)
+}
 
 func main() {
 	kingpin.Parse()
@@ -41,7 +49,7 @@ func main() {
 
 	namespaceCount := make(map[string]int)
 	for _, client := range clients.Clients {
-		namespace := "-none-"
+		namespace := "@"
 		nameParts := strings.Split(client.Alias, "@")
 		if len(nameParts) > 1 {
 			namespace = nameParts[1]
@@ -55,11 +63,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("AnyDesk Sessions Online : %d/%d\n", i.Sessions.Online, i.License.MaxSessions)
-	fmt.Printf("AnyDesk Clients Online  : %d/%d\n", i.Clients.Online, i.License.MaxClients)
-	fmt.Printf("Clients Without Alias   : %d/-1\n", namespaceCount["-none-"])
-	fmt.Printf("Namespace            ad : %d/-1\n", namespaceCount["ad"])
+	fmt.Printf("AnyDesk Sessions Online : %5d / %s\n", i.Sessions.Online, intToStr(i.License.MaxSessions))
+	fmt.Printf("AnyDesk Clients Online  : %5d / %s\n", i.Clients.Online, intToStr(i.License.MaxClients))
+	fmt.Printf("Clients Without Alias   : %5d / %s\n", namespaceCount["@"], intToStr(-1))
+	fmt.Printf("Namespace            ad : %5d / %s\n", namespaceCount["ad"], intToStr(-1))
 	for _, namespace := range i.License.Namespaces {
-		fmt.Printf("Namespace %13s : %d/%d\n", namespace.Name, namespaceCount[namespace.Name], namespace.Size)
+		fmt.Printf("Namespace %13s : %5d / %s\n", namespace.Name, namespaceCount[namespace.Name], intToStr(namespace.Size))
 	}
 }
